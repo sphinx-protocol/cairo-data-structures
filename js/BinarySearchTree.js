@@ -62,6 +62,71 @@ class BinarySearchTree {
         }
         // If not found, return undefined
         if (!found) return undefined
-        return current
+        return curr
+    }
+
+    // Breadth-First Search (BFS)
+    // Returns nodes, prioritising all sibling nodes at same level before
+    // moving down the tree.
+    BFS() {
+        // Queue keeps track of nodes to visit
+        let queue = []
+        // Visited nodes
+        let visited = []
+        let node = this.root
+        queue.push(node)
+        while (queue.length) {
+            // Move element from queue to visited and add its child nodes to queue
+            node = queue.shift()
+            visited.push(node)
+            if (node.left) queue.push(node.left)
+            if (node.right) queue.push(node.right)
+        }
+        return visited
+    }
+
+    // Depth-First Search (DFS) PreOrder
+    // Prioritises visiting all children in one branch before continuing.
+    // Traverses entire left side of each node before completing right side.
+    DFSPreOrder() {
+        // Visited nodes
+        let visited = []
+        const traverse = (node) => {
+            visited.push(node)
+            if (node.left) traverse(node.left)
+            if (node.right) traverse(node.right)
+        }
+        traverse(this.root)
+        return visited
+    }
+
+    // Depth-First Search (DFS) PostOrder
+    // Prioritises visiting all children in one branch before continuing.
+    // Visit all child nodes first before adding parent nodes.
+    DFSPostOrder() {
+        // Visited nodes
+        let visited = []
+        const traverse = (node) => {
+            if (node.left) traverse(node.left)
+            if (node.right) traverse(node.right)
+            visited.push(node)
+        }
+        traverse(this.root)
+        return visited
+    }
+
+    // Depth-First Search (DFS) InOrder
+    // First traverse left side of tree, prioritising child nodes first,
+    // before traversing right side (left to right).
+    DFSInOrder() {
+        // Visited nodes
+        let visited = []
+        const traverse = (node) => {
+            if (node.left) traverse(node.left)
+            visited.push(node)
+            if (node.right) traverse(node.right)
+        }
+        traverse(this.root)
+        return visited
     }
 }
