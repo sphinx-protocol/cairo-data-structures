@@ -17,3 +17,5 @@ async def test_create_root():
 
     await contract.test_create_heap().call()
     await contract.test_insert_to_heap().call()
+    await contract.test_extract_max().call()
+    
