@@ -165,7 +165,7 @@ func swap{heap : DictAccess*} (idx_a : felt, idx_b : felt) {
     return ();
 }
 
-// Squash dict to array and return pointer to it
+// TODO - Squash dict to array and return pointer to it
 // func squash_heap{
 //         range_check_ptr,
 //         heap : DictAccess*, 
