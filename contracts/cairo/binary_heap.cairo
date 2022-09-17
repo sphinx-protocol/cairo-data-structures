@@ -13,7 +13,7 @@ from starkware.cairo.common.math_cmp import is_le
 
 
 // Create an empty binary heap.
-// @dev : Empty dict entries are initialised at -1.
+// @dev Empty dict entries are initialised at -1.
 // @return heap : Pointer to empty dictionary containing heap
 // @return heap_len : Length of heap
 func heap_create{range_check_ptr} () -> (
@@ -32,7 +32,7 @@ func heap_create{range_check_ptr} () -> (
 }
 
 // Insert new value to max heap.
-// @dev : Heap must be passed as an implicit argument
+// @dev Heap must be passed as an implicit argument
 // @param heap_len : Length of heap
 // @param val : New value to insert into heap
 // @return new_len : New length of heap
@@ -48,7 +48,7 @@ func max_heap_insert{
 }
 
 // Recursively find correct position of new value within max heap.
-// @dev : Heap must be passed as an implicit argument
+// @dev Heap must be passed as an implicit argument
 // @param idx : Node of tree being checked in current run of function
 func max_heap_bubble_up{
         range_check_ptr,
@@ -78,8 +78,8 @@ func max_heap_bubble_up{
 }
 
 // Delete root value from max heap.
-// @dev : Heap must be passed as an implicit argument
-// @dev : tempvars used to handle revoked references for implicit args
+// @dev Heap must be passed as an implicit argument
+// @dev tempvars used to handle revoked references for implicit args
 // @param heap_len : Length of heap
 // @return root : Root value deleted from tree
 func max_heap_extract{
@@ -107,8 +107,8 @@ func max_heap_extract{
 }
 
 // Recursively find correct position of new root value within max heap.
-// @dev : Heap must be passed as an implicit argument
-// @dev : tempvars used to handle revoked references for implicit args
+// @dev Heap must be passed as an implicit argument
+// @dev tempvars used to handle revoked references for implicit args
 // @param idx : Node of tree being checked in current run of function
 func max_heap_sink_down{
         range_check_ptr,
@@ -172,7 +172,7 @@ func max_heap_sink_down{
 }
 
 // Swap dictionary entries at two indices.
-// @dev : Heap must be passed as an implicit argument
+// @dev Heap must be passed as an implicit argument
 // @param idx_a : Index of first dictionary entry to be swapped
 // @param idx_b : Index of second dictionary entry to be swapped
 func swap{heap : DictAccess*} (idx_a : felt, idx_b : felt) {
@@ -184,7 +184,7 @@ func swap{heap : DictAccess*} (idx_a : felt, idx_b : felt) {
 }
 
 // Squash heap dictionary and assert correctness of write logs.
-// @dev : Heap must be passed as an implicit argument
+// @dev Heap must be passed as an implicit argument
 // @param heap_start : Pointer to start of heap dictionary object
 // @param heap_len : Length of heap
 // @param squashed_dict : Pointer to squashed heap dictionary
