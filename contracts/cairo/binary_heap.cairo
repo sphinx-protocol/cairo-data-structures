@@ -26,7 +26,7 @@ func heap_create{range_check_ptr} () -> (
     default_dict_finalize(
         dict_accesses_start=heap,
         dict_accesses_end=heap,
-        default_value=0);
+        default_value=-1);
 
     return (heap, 0);
 }
