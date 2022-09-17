@@ -33,9 +33,9 @@ func test_insert_to_heap{
     let (elem1) = dict_read{dict_ptr=heap}(key=0);
     assert elem1 = 7;
     let (elem2) = dict_read{dict_ptr=heap}(key=1);
-    assert elem2 = 4;
+    assert elem2 = 3;
     let (elem3) = dict_read{dict_ptr=heap}(key=2);
-    assert elem3 = 3;
+    assert elem3 = 4;
     return ();
 }
 
@@ -47,9 +47,9 @@ func test_extract_max{
 } () {
     alloc_locals;
     let (heap, heap_len) = create_heap();
-    let heap_len_1 = insert_to_heap{heap=heap}(heap_len=heap_len, val=3);
-    let heap_len_2 = insert_to_heap{heap=heap}(heap_len=heap_len_1, val=4);
-    let heap_len_3 = insert_to_heap{heap=heap}(heap_len=heap_len_2, val=7);
+    insert_to_heap{heap=heap}(heap_len=0, val=3);
+    insert_to_heap{heap=heap}(heap_len=1, val=4);
+    insert_to_heap{heap=heap}(heap_len=2, val=7);
     let (elem1) = dict_read{dict_ptr=heap}(key=0);
     assert elem1 = 7;
     let (elem2) = dict_read{dict_ptr=heap}(key=1);
@@ -57,9 +57,9 @@ func test_extract_max{
     let (elem3) = dict_read{dict_ptr=heap}(key=2);
     assert elem3 = 4;
 
-    extract_max{heap=heap}(heap_len=heap_len_3);
+    extract_max{heap=heap}(heap_len=3);
     let (elem1_updated) = dict_read{dict_ptr=heap}(key=0);
-    assert elem1 = 4;
+    assert elem1_updated = 4;
 
     return ();
 }

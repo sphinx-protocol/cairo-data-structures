@@ -52,7 +52,7 @@ func bubble_up{
         return ();
     }
     
-    let (parent_idx, _) = unsigned_div_rem(idx, 2);
+    let (parent_idx, _) = unsigned_div_rem(idx - 1, 2);
     let (elem) = dict_read{dict_ptr=heap}(key=idx);
     let (parent_elem) = dict_read{dict_ptr=heap}(key=parent_idx);
 
@@ -108,45 +108,46 @@ func sink_down{
     let (right) = dict_read{dict_ptr=heap}(key=right_idx);
 
     let left_exists = is_le(1, left); 
-    let right_exists = is_le(1, right); 
+    let right_exists = is_le(1, right);
+    let less_than_left = is_le(node, left);
+    let less_than_right = is_le(node, right);
+    let right_larger = is_le(left, right - 1);
 
     if (left_exists == 0) {
-        if (right_exists == 0) {
-            tempvar range_check_ptr=range_check_ptr;
-            tempvar heap=heap;
-            return ();
-        } else {
-            let less_than_left = is_le(node, left);
-            if (less_than_left == 1) {
-                swap(idx, left_idx);
-                tempvar range_check_ptr=range_check_ptr;
-                tempvar heap=heap;
-            } else {
-                tempvar range_check_ptr=range_check_ptr;
-                tempvar heap=heap;
-                return ();
-            }
-        }
-    } else {
-        if (left_exists == 0) {
-            let less_than_right = is_le(node, right);
+        if (right_exists == 1) {
             if (less_than_right == 1) {
                 swap(idx, right_idx);
+                sink_down(right_idx);
                 tempvar range_check_ptr=range_check_ptr;
                 tempvar heap=heap;
             } else {
                 tempvar range_check_ptr=range_check_ptr;
                 tempvar heap=heap;
-                return ();
             }
         } else {
-            local larger = is_le(left, right - 1);
-            if (larger == 1) {
+            tempvar range_check_ptr=range_check_ptr;
+            tempvar heap=heap;
+        }
+    } else {
+        if (right_exists == 0) {
+            if (less_than_left == 1) {
+                swap(idx, left_idx);
+                sink_down(left_idx);
+                tempvar range_check_ptr=range_check_ptr;
+                tempvar heap=heap;
+            } else {
+                tempvar range_check_ptr=range_check_ptr;
+                tempvar heap=heap;
+            }
+        } else {
+            if (right_larger == 1) {
                 swap(idx, right_idx);
+                sink_down(right_idx);
                 tempvar range_check_ptr=range_check_ptr;
                 tempvar heap=heap;
             } else {
                 swap(idx, left_idx);
+                sink_down(left_idx);
                 tempvar range_check_ptr=range_check_ptr;
                 tempvar heap=heap;
             }
@@ -161,7 +162,6 @@ func swap{heap : DictAccess*} (idx_a : felt, idx_b : felt) {
     let (elem_b) = dict_read{dict_ptr=heap}(key=idx_b);
     dict_update{dict_ptr=heap}(key=idx_a, prev_value=elem_a, new_value=elem_b);
     dict_update{dict_ptr=heap}(key=idx_b, prev_value=elem_b, new_value=elem_a);
-    sink_down(idx_b);
     return ();
 }
 
