@@ -5,7 +5,7 @@ from starkware.cairo.common.default_dict import (
     default_dict_new, default_dict_finalize
 )
 from starkware.cairo.common.dict import (
-    dict_write, dict_read, dict_update
+    dict_write, dict_read, dict_update, dict_squash
 )
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import unsigned_div_rem
@@ -165,22 +165,14 @@ func swap{heap : DictAccess*} (idx_a : felt, idx_b : felt) {
     return ();
 }
 
-// TODO - Squash dict to array and return pointer to it
-// func squash_heap{
-//         range_check_ptr,
-//         heap : DictAccess*, 
-//         heap_len : felt
-//     } (idx : felt) -> DictAccess* {
-//     alloc_locals;
-
-//     let dict_end = dict_start + (heap_len - 1) * DictAccess.SIZE;
-    
-//     let (local squashed_dict_start: DictAccess*) = alloc();
-//     let (squashed_dict_end) = squash_dict(
-//         heap, 
-//         dict_end, 
-//         squashed_dict_start
-//     );
-
-//     return (squashed_dict_start, );
-// }
+// Squash dict
+func squash_heap{
+        range_check_ptr,
+        heap : DictAccess*, 
+    } (heap_start : DictAccess*, heap_len : felt) -> (
+        squashed_dict_start : DictAccess*,
+        squashed_dict_end : DictAccess* 
+    ) {
+    let (squashed_dict_start, squashed_dict_end) = dict_squash(heap_start, heap);
+    return (squashed_dict_start, squashed_dict_end);
+}

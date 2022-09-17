@@ -15,7 +15,5 @@ async def test_create_root():
     # Deploy the contract
     contract = await starknet.deploy(CONTRACT_FILE)
 
-    await contract.test_create_heap().call()
-    await contract.test_insert_to_heap().call()
-    await contract.test_extract_max().call()
+    await contract.test_heap().call()
     
