@@ -12,14 +12,16 @@ from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.math_cmp import is_le
 
 
-// Create an empty heap.
-func create_heap{range_check_ptr} () -> (
+// Create an empty binary heap.
+// @dev : Empty dict entries are initialised at -1.
+// @return heap : Pointer to empty dictionary containing heap
+// @return heap_len : Length of heap
+func heap_create{range_check_ptr} () -> (
         heap : DictAccess*,
         heap_len : felt
     ) {
     alloc_locals;
-    // Create an empty dictionary and finalise it.
-    // All keys will be set to value of -1.
+
     let (local heap) = default_dict_new(default_value=-1);
     default_dict_finalize(
         dict_accesses_start=heap,
@@ -29,23 +31,29 @@ func create_heap{range_check_ptr} () -> (
     return (heap, 0);
 }
 
-// Insert a value to the heap
-func insert_to_heap{
+// Insert new value to max heap.
+// @dev : Heap must be passed as an implicit argument
+// @param heap_len : Length of heap
+// @param val : New value to insert into heap
+// @return new_len : New length of heap
+func max_heap_insert{
         range_check_ptr,
         heap : DictAccess*, 
-    } (heap_len : felt, val : felt) -> felt {
+    } (heap_len : felt, val : felt) -> (new_len : felt) {
     alloc_locals;
 
     dict_write{dict_ptr=heap}(key=heap_len, new_value=val);
-    bubble_up(heap_len=heap_len, idx=heap_len);
-    return (heap_len + 1);
+    max_heap_bubble_up(idx=heap_len);
+    return (new_len=heap_len + 1);
 }
 
-// Find correct position of new value within heap
-func bubble_up{
+// Recursively find correct position of new value within max heap.
+// @dev : Heap must be passed as an implicit argument
+// @param idx : Node of tree being checked in current run of function
+func max_heap_bubble_up{
         range_check_ptr,
         heap : DictAccess*
-    } (heap_len : felt, idx : felt) {
+    } (idx : felt) {
     alloc_locals;
 
     if (idx == 0) {
@@ -64,16 +72,20 @@ func bubble_up{
     dict_update{dict_ptr=heap}(key=idx, prev_value=elem, new_value=parent_elem);
     dict_update{dict_ptr=heap}(key=parent_idx, prev_value=parent_elem, new_value=elem);
 
-    bubble_up(heap_len=heap_len, idx=parent_idx);
+    max_heap_bubble_up(idx=parent_idx);
 
     return ();
 }
 
-// Delete root value from tree
-func extract_max{
+// Delete root value from max heap.
+// @dev : Heap must be passed as an implicit argument
+// @dev : tempvars used to handle revoked references for implicit args
+// @param heap_len : Length of heap
+// @return root : Root value deleted from tree
+func max_heap_extract{
         range_check_ptr,
         heap : DictAccess*
-    } (heap_len : felt) -> felt {
+    } (heap_len : felt) -> (root : felt) {
     alloc_locals; 
 
     let (root) = dict_read{dict_ptr=heap}(key=0);
@@ -83,7 +95,7 @@ func extract_max{
     let heap_len_pos = is_le(2, heap_len);
     if (heap_len_pos == 1) {
         dict_update{dict_ptr=heap}(key=0, prev_value=root, new_value=end);
-        sink_down(idx=0);
+        max_heap_sink_down(idx=0);
         tempvar range_check_ptr=range_check_ptr;
         tempvar heap=heap;
     } else {
@@ -91,11 +103,14 @@ func extract_max{
         tempvar heap=heap;
     }
 
-    return (root);
+    return (root=root);
 }
 
-// Find correct position of newly inserted root
-func sink_down{
+// Recursively find correct position of new root value within max heap.
+// @dev : Heap must be passed as an implicit argument
+// @dev : tempvars used to handle revoked references for implicit args
+// @param idx : Node of tree being checked in current run of function
+func max_heap_sink_down{
         range_check_ptr,
         heap : DictAccess*
     } (idx : felt) {
@@ -117,7 +132,7 @@ func sink_down{
         if (right_exists == 1) {
             if (less_than_right == 1) {
                 swap(idx, right_idx);
-                sink_down(right_idx);
+                max_heap_sink_down(right_idx);
                 tempvar range_check_ptr=range_check_ptr;
                 tempvar heap=heap;
             } else {
@@ -132,7 +147,7 @@ func sink_down{
         if (right_exists == 0) {
             if (less_than_left == 1) {
                 swap(idx, left_idx);
-                sink_down(left_idx);
+                max_heap_sink_down(left_idx);
                 tempvar range_check_ptr=range_check_ptr;
                 tempvar heap=heap;
             } else {
@@ -142,12 +157,12 @@ func sink_down{
         } else {
             if (right_larger == 1) {
                 swap(idx, right_idx);
-                sink_down(right_idx);
+                max_heap_sink_down(right_idx);
                 tempvar range_check_ptr=range_check_ptr;
                 tempvar heap=heap;
             } else {
                 swap(idx, left_idx);
-                sink_down(left_idx);
+                max_heap_sink_down(left_idx);
                 tempvar range_check_ptr=range_check_ptr;
                 tempvar heap=heap;
             }
@@ -156,7 +171,10 @@ func sink_down{
     return ();
 }
 
-// Swap dict entries at two indices
+// Swap dictionary entries at two indices.
+// @dev : Heap must be passed as an implicit argument
+// @param idx_a : Index of first dictionary entry to be swapped
+// @param idx_b : Index of second dictionary entry to be swapped
 func swap{heap : DictAccess*} (idx_a : felt, idx_b : felt) {
     let (elem_a) = dict_read{dict_ptr=heap}(key=idx_a);
     let (elem_b) = dict_read{dict_ptr=heap}(key=idx_b);
@@ -165,14 +183,17 @@ func swap{heap : DictAccess*} (idx_a : felt, idx_b : felt) {
     return ();
 }
 
-// Squash dict
-func squash_heap{
+// Squash heap dictionary and assert correctness of write logs.
+// @dev : Heap must be passed as an implicit argument
+// @param heap_start : Pointer to start of heap dictionary object
+// @param heap_len : Length of heap
+// @param squashed_dict : Pointer to squashed heap dictionary
+func heap_squash{
         range_check_ptr,
         heap : DictAccess*, 
     } (heap_start : DictAccess*, heap_len : felt) -> (
-        squashed_dict_start : DictAccess*,
-        squashed_dict_end : DictAccess* 
+        squashed_dict : DictAccess* 
     ) {
-    let (squashed_dict_start, squashed_dict_end) = dict_squash(heap_start, heap);
-    return (squashed_dict_start, squashed_dict_end);
+    let (_, squashed_dict) = dict_squash(heap_start, heap);
+    return (squashed_dict=squashed_dict);
 }
