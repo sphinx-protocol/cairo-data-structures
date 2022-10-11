@@ -56,17 +56,35 @@ func sl_list_push{range_check_ptr, sl_list : DictAccess*}(val : felt) {
     alloc_locals;
 
     let (new_node) = sl_node_create(val);
-    // let (head) = dict_read{dict_ptr=sl_list}(key=0);
-    // let (tail) = dict_read{dict_ptr=sl_list}(key=1);
     let (length) = dict_read{dict_ptr=sl_list}(key=2);
 
     if (length == 0) {
         dict_update{dict_ptr=sl_list}(key=0, prev_value=-1, new_value=cast(new_node, felt));
         dict_update{dict_ptr=sl_list}(key=1, prev_value=-1, new_value=cast(new_node, felt));
+
         tempvar sl_list=sl_list;
     } else {
+        let (tail_loc) = dict_read{dict_ptr=sl_list}(key=1);
+        let tail_dict = cast(tail_loc, DictAccess*);
+        let (tail_next) = dict_read{dict_ptr=tail_dict}(key=1);
+        dict_update{dict_ptr=tail_dict}(key=1, prev_value=tail_next, new_value=cast(new_node, felt));
+
+        dict_update{dict_ptr=sl_list}(key=1, prev_value=tail_loc, new_value=cast(new_node, felt));
+        
         tempvar sl_list=sl_list;
     }
 
+    dict_update{dict_ptr=sl_list}(key=2, prev_value=length, new_value=length+1);
+
     return ();
 }
+
+// Remove item from the end of the list
+// func sl_list_pop{range_check_ptr, sl_list : DictAccess*}() -> (del : DictAccess*) {
+//     let (length) = dict_read{dict_ptr=sl_list}(key=2);
+    
+//     if (length == 0) {
+//         return ();
+//     }
+
+// }

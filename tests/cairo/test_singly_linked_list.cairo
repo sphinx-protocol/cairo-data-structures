@@ -6,7 +6,7 @@ from starkware.cairo.common.dict import (
     dict_write, dict_read, dict_update, dict_squash
 )
 
-from contracts.cairo.sl_list import (
+from contracts.cairo.singly_linked_list import (
     sl_node_create, sl_list_create, sl_list_push
 )
 
@@ -38,10 +38,15 @@ func test_sl_list{
 
     // Insert node to list
     sl_list_push{sl_list=sl_list}(3);
-    let (head_loc) = dict_read{dict_ptr=sl_list}(key=0);
-    let head_dict = cast(head_loc, DictAccess*);
-    let (retrieved_val) = dict_read{dict_ptr=head_dict}(key=0);
-    assert retrieved_val = 3;
+    // sl_list_push{sl_list=sl_list}(4);
+    // let (head_loc) = dict_read{dict_ptr=sl_list}(key=0);
+    // let head_dict = cast(head_loc, DictAccess*);
+    // let (head_val) = dict_read{dict_ptr=head_dict}(key=0);
+    // assert head_val = 3;
+    // let (second_loc) = dict_read{dict_ptr=head_dict}(key=1);
+    // let (second_dict) = cast(second_loc, DictAccess*);
+    // let (retrieved_second_val) = dict_read{dict_ptr=second_dict}(key=0);
+    // assert retrieved_second_val = 4;
 
     return ();
 }

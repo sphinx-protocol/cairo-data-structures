@@ -1,11 +1,16 @@
 %lang starknet
 
+from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.dict import dict_read
 
 from contracts.cairo.binary_heap import (
     heap_create, max_heap_insert, max_heap_extract, heap_squash
 )
-from starkware.cairo.common.dict import dict_read
+
+@storage_var
+func heap_store(idx : felt) -> (val: felt) {
+}
 
 @external
 func test_heap{
@@ -49,6 +54,33 @@ func test_heap{
     let (squash_3) = dict_read{dict_ptr=squashed_dict}(key=2);
     assert squash_3 = -1;
 
+    // Write heap to storage
+    write_heap{heap=heap}(heap_len=3);
+
+    // Read heap from storage
+    let (val1) = heap_store.read(0);
+    let (val2) = heap_store.read(1);
+    let (val3) = heap_store.read(2);
+    assert val1 = 4;
+    assert val2 = 3;
+    assert val3 = -1;
+
     return ();
 }
 
+func write_heap{
+    syscall_ptr : felt*,
+    pedersen_ptr : HashBuiltin*,
+    range_check_ptr,
+    heap : DictAccess*
+} (heap_len : felt) {
+    if (heap_len == 0) {
+        return ();
+    }
+
+    let (val) = dict_read{dict_ptr=heap}(key=heap_len - 1);
+    heap_store.write(heap_len - 1, val);
+    write_heap(heap_len - 1);
+
+    return ();
+}
