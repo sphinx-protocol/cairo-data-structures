@@ -15,5 +15,5 @@ async def test_create_root():
     # Deploy the contract
     contract = await starknet.deploy(CONTRACT_FILE)
 
-    await contract.test_sl_list().call()
+    await contract.test_singly_linked_list().call()
     

@@ -11,7 +11,7 @@ from contracts.cairo.singly_linked_list import (
 )
 
 @external
-func test_sl_list{
+func test_singly_linked_list{
     syscall_ptr : felt*,
     pedersen_ptr : HashBuiltin*,
     range_check_ptr
@@ -19,7 +19,8 @@ func test_sl_list{
     alloc_locals;
 
     // Create an empty singly linked list
-    let (sl_list, list_len) = sl_list_create();
+    let (sl_list) = sl_list_create();
+
     let (head) = dict_read{dict_ptr=sl_list}(key=0);
     let (tail) = dict_read{dict_ptr=sl_list}(key=1);
     let (length) = dict_read{dict_ptr=sl_list}(key=2);
@@ -27,7 +28,6 @@ func test_sl_list{
     assert head = -1;
     assert tail = -1;
     assert length = 0;
-    // assert cast(head, felt) = -1;
 
     // Create a new node
     let (node) = sl_node_create(1);
@@ -38,15 +38,31 @@ func test_sl_list{
 
     // Insert node to list
     sl_list_push{sl_list=sl_list}(3);
-    // sl_list_push{sl_list=sl_list}(4);
-    // let (head_loc) = dict_read{dict_ptr=sl_list}(key=0);
-    // let head_dict = cast(head_loc, DictAccess*);
-    // let (head_val) = dict_read{dict_ptr=head_dict}(key=0);
-    // assert head_val = 3;
-    // let (second_loc) = dict_read{dict_ptr=head_dict}(key=1);
-    // let (second_dict) = cast(second_loc, DictAccess*);
-    // let (retrieved_second_val) = dict_read{dict_ptr=second_dict}(key=0);
-    // assert retrieved_second_val = 4;
+    sl_list_push{sl_list=sl_list}(4);
+    sl_list_push{sl_list=sl_list}(5);
+    sl_list_push{sl_list=sl_list}(6);
+    
+    // Read nodes
+    // TO SOLVE: note every time you read a node it increases its location by 3
+    let (head_loc) = dict_read{dict_ptr=sl_list}(key=0);
+    let head_dict : DictAccess*  = cast(head_loc, DictAccess*);
+    let (head_val) = dict_read{dict_ptr=head_dict}(key=0);
+    assert head_val = 3;
+    
+    let (second_loc) = dict_read{dict_ptr=head_dict}(key=1);
+    let second_dict : DictAccess* = cast(second_loc + 6, DictAccess*);
+    let (second_val) = dict_read{dict_ptr=second_dict}(key=0);
+    assert second_val = 4;
+    
+    let (third_loc) = dict_read{dict_ptr=second_dict}(key=1);
+    let third_dict : DictAccess* = cast(third_loc + 6, DictAccess*);
+    let (third_val) = dict_read{dict_ptr=third_dict}(key=0);
+    assert third_val = 5;
+
+    let (tail_loc) = dict_read{dict_ptr=sl_list}(key=1);
+    let tail_dict = cast(tail_loc, DictAccess*);
+    let (tail_val) = dict_read{dict_ptr=tail_dict}(key=0);
+    assert tail_val = 6;
 
     return ();
 }
