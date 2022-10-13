@@ -182,18 +182,3 @@ func swap{heap : DictAccess*} (idx_a : felt, idx_b : felt) {
     dict_update{dict_ptr=heap}(key=idx_b, prev_value=elem_b, new_value=elem_a);
     return ();
 }
-
-// Squash heap dictionary and assert correctness of write logs.
-// @dev Heap must be passed as an implicit argument
-// @param heap_start : Pointer to start of heap dictionary object
-// @param heap_len : Length of heap
-// @param squashed_dict : Pointer to squashed heap dictionary
-func heap_squash{
-        range_check_ptr,
-        heap : DictAccess*, 
-    } (heap_start : DictAccess*, heap_len : felt) -> (
-        squashed_dict : DictAccess* 
-    ) {
-    let (_, squashed_dict) = dict_squash(heap_start, heap);
-    return (squashed_dict=squashed_dict);
-}
