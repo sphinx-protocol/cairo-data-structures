@@ -11,8 +11,8 @@ Below is a list of implemented and planned data structures. We also indicate the
 | Stack | - | - | - | In development |
 | Queue | - | - | - | In development |
 | Binary search tree | - | - | - | In development |
-| Max binary heap | - | - | - | ✅ |
-| Min binary heap | - | - | - | In development |
+| Binary heap | - | - | - | ✅ |
+| Priority queue | - | - | - | ✅ |
 | Hash table | - | - | - | In development |
 | Graph | - | - | - | In development |
 
