@@ -1,5 +1,6 @@
 %lang starknet
 
+from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import (
     default_dict_new, default_dict_finalize
@@ -11,6 +12,33 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.math_cmp import is_le
 
+// Data structure representing a single limit order.
+// @dev id : 
+struct Order {
+    id : felt,
+    price : felt,
+    dt : felt,
+}
+
+struct OrderDetails {
+    id : felt,
+    dt : felt,
+    owner : felt,
+    pair : felt,
+    chain_id : felt,
+    price : felt,
+    size : felt,
+}
+
+// Stores current state of order book, represented as a binary heap.
+@storage_var
+func bid_order_book(idx : felt) -> (order: Order) {
+}
+
+// Stores order details as mapping of id to order details.
+@storage_var
+func order_details(id : felt) -> (details: OrderDetails) {
+}
 
 // Create an empty bid order book (bob).
 // @dev Empty dict entries are initialised at -1.
@@ -62,7 +90,6 @@ func bob_insert{
 
 // Recursively find correct position of new order within buy order book.
 // @dev bob_prices, bob_dts, bob_ids, bob_len must be passed as implicit arguments
-// @dev tempvars used to handle revoked references
 // @param idx : Node of heap being checked in current run of function
 func bob_bubble_up{
         range_check_ptr,
@@ -107,38 +134,8 @@ func bob_bubble_up{
     return ();
 }
 
-// Swaps locations of two entries in buy order book.
-// @dev bob_prices, bob_dts, bob_ids must be passed as implicit arguments
-// @param idx_a : Index of first order being swapped
-// @param idx_b : Index of second order being swapped
-func bob_swap{
-        range_check_ptr,
-        bob_prices : DictAccess*,
-        bob_dts : DictAccess*,
-        bob_ids : DictAccess*,
-    } (idx_a : felt, idx_b : felt) {
-    alloc_locals;
-
-    let (elem_a_price) = dict_read{dict_ptr=bob_prices}(key=idx_a);
-    let (elem_a_dt) = dict_read{dict_ptr=bob_dts}(key=idx_a);
-    let (elem_a_id) = dict_read{dict_ptr=bob_ids}(key=idx_a);
-    let (elem_b_price) = dict_read{dict_ptr=bob_prices}(key=idx_b);
-    let (elem_b_dt) = dict_read{dict_ptr=bob_dts}(key=idx_b);
-    let (elem_b_id) = dict_read{dict_ptr=bob_ids}(key=idx_b);
-
-    dict_update{dict_ptr=bob_prices}(key=idx_a, prev_value=elem_a_price, new_value=elem_b_price);
-    dict_update{dict_ptr=bob_prices}(key=idx_b, prev_value=elem_b_price, new_value=elem_a_price);
-    dict_update{dict_ptr=bob_dts}(key=idx_a, prev_value=elem_a_dt, new_value=elem_b_dt);
-    dict_update{dict_ptr=bob_dts}(key=idx_b, prev_value=elem_b_dt, new_value=elem_a_dt);
-    dict_update{dict_ptr=bob_ids}(key=idx_a, prev_value=elem_a_id, new_value=elem_b_id);
-    dict_update{dict_ptr=bob_ids}(key=idx_b, prev_value=elem_b_id, new_value=elem_a_id);
-
-    return ();
-}
-
 // Delete order from buy order book (bob).
 // @dev bob_prices, bob_dts, bob_ids, bob_len must be passed as implicit arguments
-// @dev tempvars used to handle revoked references for implicit args
 // @param heap_len : Length of heap
 // @return root : Root value deleted from heap
 func bob_extract{
@@ -179,7 +176,6 @@ func bob_extract{
 
 // Recursively find correct position of new root value within order book.
 // @dev bob_prices, bob_dts, bob_ids, bob_len must be passed as implicit arguments
-// @dev tempvars used to handle revoked references for implicit args
 // @param idx : Node of heap being checked in current run of function
 func bob_sink_down{
         range_check_ptr,
@@ -313,6 +309,38 @@ func bob_sink_down{
     return ();
 }
 
+// Utility function to swap location of two entries in buy order book.
+// @dev bob_prices, bob_dts, bob_ids must be passed as implicit arguments
+// @param idx_a : Index of first order being swapped
+// @param idx_b : Index of second order being swapped
+func bob_swap{
+        range_check_ptr,
+        bob_prices : DictAccess*,
+        bob_dts : DictAccess*,
+        bob_ids : DictAccess*,
+    } (idx_a : felt, idx_b : felt) {
+    alloc_locals;
+
+    let (elem_a_price) = dict_read{dict_ptr=bob_prices}(key=idx_a);
+    let (elem_a_dt) = dict_read{dict_ptr=bob_dts}(key=idx_a);
+    let (elem_a_id) = dict_read{dict_ptr=bob_ids}(key=idx_a);
+    let (elem_b_price) = dict_read{dict_ptr=bob_prices}(key=idx_b);
+    let (elem_b_dt) = dict_read{dict_ptr=bob_dts}(key=idx_b);
+    let (elem_b_id) = dict_read{dict_ptr=bob_ids}(key=idx_b);
+
+    dict_update{dict_ptr=bob_prices}(key=idx_a, prev_value=elem_a_price, new_value=elem_b_price);
+    dict_update{dict_ptr=bob_prices}(key=idx_b, prev_value=elem_b_price, new_value=elem_a_price);
+    dict_update{dict_ptr=bob_dts}(key=idx_a, prev_value=elem_a_dt, new_value=elem_b_dt);
+    dict_update{dict_ptr=bob_dts}(key=idx_b, prev_value=elem_b_dt, new_value=elem_a_dt);
+    dict_update{dict_ptr=bob_ids}(key=idx_a, prev_value=elem_a_id, new_value=elem_b_id);
+    dict_update{dict_ptr=bob_ids}(key=idx_b, prev_value=elem_b_id, new_value=elem_a_id);
+
+    return ();
+}
+
+// Utility function to handle revoked implicit references.
+// @dev bob_prices, bob_dts, bob_ids, bob_len must be passed as implicit arguments
+// @dev tempvars used to handle revoked implict references
 func handle_revoked_refs{
         range_check_ptr,
         bob_prices : DictAccess*,
@@ -328,3 +356,48 @@ func handle_revoked_refs{
     return ();
 }
 
+
+func bob_write_to_storage{
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    } ( 
+        bob_prices : DictAccess*,
+        bob_dts : DictAccess*,
+        bob_ids : DictAccess*,
+        idx : felt
+    ) {
+    alloc_locals;
+
+    if (idx == -1) {
+        return ();
+    }
+    
+    let (price) = dict_read{dict_ptr=bob_prices}(key=idx);
+    let (dt) = dict_read{dict_ptr=bob_dts}(key=idx);
+    let (id) = dict_read{dict_ptr=bob_ids}(key=idx);
+    let (order) = bid_order_book.read(idx=idx);
+
+    if (id == order.id) {
+        bob_write_to_storage(bob_prices, bob_dts, bob_ids, idx - 1);
+        tempvar syscall_ptr=syscall_ptr;
+        tempvar pedersen_ptr=pedersen_ptr;
+        tempvar range_check_ptr=range_check_ptr;
+    } else {
+        tempvar new_order: Order* = new Order(id=id, price=price, dt=dt);
+        bid_order_book.write(idx, [new_order]);
+        bob_write_to_storage(bob_prices, bob_dts, bob_ids, idx - 1);
+        tempvar syscall_ptr=syscall_ptr;
+        tempvar pedersen_ptr=pedersen_ptr;
+        tempvar range_check_ptr=range_check_ptr;
+    }
+
+    return ();
+}
+
+func bob_read_one_from_storage{
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    } (idx : felt) -> (
+        price : felt, dt : felt, id : felt
+    ) {
+    let (order) = bid_order_book.read(idx=idx);
+    return (price=order.price, dt=order.dt, id=order.id);
+}
