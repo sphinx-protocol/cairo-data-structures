@@ -1,9 +1,6 @@
 %lang starknet
 
-from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.dict import dict_read
-
 from contracts.cairo.bid_order_book import (
     bob_insert, bob_extract, bid_order_book
 )

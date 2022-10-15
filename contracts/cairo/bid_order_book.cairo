@@ -1,13 +1,6 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.default_dict import (
-    default_dict_new, default_dict_finalize
-)
-from starkware.cairo.common.dict import (
-    dict_write, dict_read, dict_update
-)
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.math_cmp import is_le
@@ -25,8 +18,9 @@ struct OrderDetails {
     id : felt,
     dt : felt,
     owner : felt,
-    pair : felt,
     chain_id : felt,
+    base_asset : felt,
+    quote_asset : felt,
     price : felt,
     size : felt,
 }
