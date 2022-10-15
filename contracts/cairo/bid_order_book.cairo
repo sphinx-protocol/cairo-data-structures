@@ -13,13 +13,14 @@ from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.math_cmp import is_le
 
 // Data structure representing a single limit order.
-// @dev id : 
 struct Order {
     id : felt,
     price : felt,
     dt : felt,
 }
 
+// Data structure representing additional details for an order.
+// @dev OrderDetails linked to Order by unique identifer id
 struct OrderDetails {
     id : felt,
     dt : felt,
@@ -35,69 +36,45 @@ struct OrderDetails {
 func bid_order_book(idx : felt) -> (order: Order) {
 }
 
+// Stores length of order book.
+@storage_var
+func bob_length() -> (res : felt) {
+}
+
 // Stores order details as mapping of id to order details.
 @storage_var
 func order_details(id : felt) -> (details: OrderDetails) {
 }
 
-// Create an empty bid order book (bob).
-// @dev Empty dict entries are initialised at -1.
-// @return bob_prices : Pointer to empty dictionary containing order prices.
-// @return bob_dts : Pointer to empty dictionary containing order datetime.
-// @return bob_ids : Pointer to empty dictionary containing order IDs.
-// @return bob_len : Pointer to empty dictionary containing length of bob at index 0.
-func bob_create{range_check_ptr} () -> (
-        bob_prices : DictAccess*,
-        bob_dts : DictAccess*,
-        bob_ids : DictAccess*,
-        bob_len : DictAccess*
-    ) {
-    alloc_locals;
-
-    let (local bob_prices) = default_dict_new(default_value=-1);
-    let (local bob_dts) = default_dict_new(default_value=-1);
-    let (local bob_ids) = default_dict_new(default_value=-1);
-    let (local bob_len) = default_dict_new(default_value=-1);
-    dict_write{dict_ptr=bob_len}(key=0, new_value=0);
-
-    return (bob_prices=bob_prices, bob_dts=bob_dts, bob_ids=bob_ids, bob_len=bob_len);
-}
-
-// Insert new trade to bid order book (bob).
-// @dev bob_prices, bob_dts, bob_ids, bob_len must be passed as implicit arguments
+// Insert new order to bid order book (bob).
 // @param order_price : Order price
 // @param order_dt : Order datetime
 // @param order_id : Order ID
 func bob_insert{
-        range_check_ptr,
-        bob_prices : DictAccess*,
-        bob_dts : DictAccess*,
-        bob_ids : DictAccess*,
-        bob_len : DictAccess*
-    } (order_price : felt, order_dt : felt, order_id: felt) {
+    syscall_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+} (order_price : felt, order_dt : felt, order_id: felt) {
     alloc_locals;
 
-    let (len) = dict_read{dict_ptr=bob_len}(key=0);
-    dict_write{dict_ptr=bob_prices}(key=len, new_value=order_price);
-    dict_write{dict_ptr=bob_dts}(key=len, new_value=order_dt);
-    dict_write{dict_ptr=bob_ids}(key=len, new_value=order_id);
-    dict_write{dict_ptr=bob_len}(key=0, new_value=len+1);
-
+    let (len) = bob_length.read();
+    tempvar new_order: Order* = new Order(
+        id=order_id, price=order_price, dt=order_dt
+    );
+    bid_order_book.write(len, [new_order]);
     bob_bubble_up(idx=len);   
+    bob_length.write(len+1);
 
     return ();
 }
 
 // Recursively find correct position of new order within buy order book.
-// @dev bob_prices, bob_dts, bob_ids, bob_len must be passed as implicit arguments
 // @param idx : Node of heap being checked in current run of function
 func bob_bubble_up{
-        range_check_ptr,
-        bob_prices : DictAccess*,
-        bob_dts : DictAccess*,
-        bob_ids : DictAccess*,
-        bob_len : DictAccess*
-    } (idx : felt) {
+    syscall_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+} (idx : felt) {
     alloc_locals;
 
     if (idx == 0) {
@@ -105,18 +82,16 @@ func bob_bubble_up{
     }
     
     let (parent_idx, _) = unsigned_div_rem(idx - 1, 2);
-    let (elem_price) = dict_read{dict_ptr=bob_prices}(key=idx);
-    let (elem_dt) = dict_read{dict_ptr=bob_dts}(key=idx);
-    let (parent_elem_price) = dict_read{dict_ptr=bob_prices}(key=parent_idx);
-    let (parent_elem_dt) = dict_read{dict_ptr=bob_dts}(key=parent_idx);
+    let (order) = bid_order_book.read(idx=idx);
+    let (parent_order) = bid_order_book.read(idx=parent_idx);
 
-    local price_less_than = is_le(elem_price, parent_elem_price - 1);
+    local price_less_than = is_le(order.price, parent_order.price - 1);
     if (price_less_than == 1) {
         return ();
     }
 
-    local datetime_greater_or_equal = is_le(parent_elem_dt, elem_dt);
-    if (elem_price == parent_elem_price) {
+    local datetime_greater_or_equal = is_le(parent_order.dt, order.dt);
+    if (order.price == parent_order.price) {
         if (datetime_greater_or_equal == 1) {
             handle_revoked_refs();
             return ();
@@ -135,75 +110,61 @@ func bob_bubble_up{
 }
 
 // Delete order from buy order book (bob).
-// @dev bob_prices, bob_dts, bob_ids, bob_len must be passed as implicit arguments
 // @param heap_len : Length of heap
 // @return root : Root value deleted from heap
 func bob_extract{
-        range_check_ptr,
-        bob_prices : DictAccess*,
-        bob_dts : DictAccess*,
-        bob_ids : DictAccess*,
-        bob_len : DictAccess*
-    } () -> (root_price : felt, root_dt : felt, root_id : felt) {
+    syscall_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+} () -> (root_price : felt, root_dt : felt, root_id : felt) {
     alloc_locals; 
 
-    let (len) = dict_read{dict_ptr=bob_len}(key=0);
-    let (root_price) = dict_read{dict_ptr=bob_prices}(key=0);
-    let (root_dt) = dict_read{dict_ptr=bob_dts}(key=0);
-    let (root_id) = dict_read{dict_ptr=bob_ids}(key=0);
-    let (last_price) = dict_read{dict_ptr=bob_prices}(key=len-1);
-    let (last_dt) = dict_read{dict_ptr=bob_dts}(key=len-1);
-    let (last_id) = dict_read{dict_ptr=bob_ids}(key=len-1);
+    let (len) = bob_length.read();
+    let (root) = bid_order_book.read(0);
+    let (last) = bid_order_book.read(len - 1);
 
-    dict_update{dict_ptr=bob_prices}(key=len-1, prev_value=last_price, new_value=-1);
-    dict_update{dict_ptr=bob_dts}(key=len-1, prev_value=last_dt, new_value=-1);
-    dict_update{dict_ptr=bob_ids}(key=len-1, prev_value=last_id, new_value=-1);
-    dict_update{dict_ptr=bob_len}(key=0, prev_value=len, new_value=len-1);
+    tempvar new_order: Order* = new Order(
+        id=0, price=0, dt=0
+    );
+    bid_order_book.write(len - 1, [new_order]);
+    bob_length.write(len - 1);
 
-    let heap_len_pos = is_le(2, len);
+    let heap_len_pos = is_le(1, len - 1);
     if (heap_len_pos == 1) {
-        dict_update{dict_ptr=bob_prices}(key=0, prev_value=root_price, new_value=last_price);
-        dict_update{dict_ptr=bob_dts}(key=0, prev_value=root_dt, new_value=last_dt);
-        dict_update{dict_ptr=bob_ids}(key=0, prev_value=root_id, new_value=last_id);
+        bid_order_book.write(0, last);
         bob_sink_down(idx=0);
         handle_revoked_refs();
     } else {
         handle_revoked_refs();
     }
 
-    return (root_price=root_price, root_dt=root_dt, root_id=root_id);
+    return (root_price=root.price, root_dt=root.dt, root_id=root.id);
 }
 
 // Recursively find correct position of new root value within order book.
-// @dev bob_prices, bob_dts, bob_ids, bob_len must be passed as implicit arguments
 // @param idx : Node of heap being checked in current run of function
 func bob_sink_down{
-        range_check_ptr,
-        bob_prices : DictAccess*,
-        bob_dts : DictAccess*,
-        bob_ids : DictAccess*,
-        bob_len : DictAccess*
-    } (idx : felt) {
+    syscall_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+} (idx : felt) {
     alloc_locals;
 
     local left_idx = 2 * idx + 1;
     local right_idx = 2 * idx + 2;
 
-    let (node_price) = dict_read{dict_ptr=bob_prices}(key=idx);
-    let (left_price) = dict_read{dict_ptr=bob_prices}(key=left_idx);
-    let (right_price) = dict_read{dict_ptr=bob_prices}(key=right_idx);
-    let (node_dt) = dict_read{dict_ptr=bob_dts}(key=idx);
-    let (left_dt) = dict_read{dict_ptr=bob_dts}(key=left_idx);
-    let (right_dt) = dict_read{dict_ptr=bob_dts}(key=right_idx);
+    let (node) = bid_order_book.read(idx);
+    let (left) = bid_order_book.read(left_idx);
+    let (right) = bid_order_book.read(right_idx);
 
-    let left_exists = is_le(1, left_price); 
-    let right_exists = is_le(1, right_price);
-    let price_less_than_left = is_le(node_price, left_price - 1);
-    let price_less_than_right = is_le(node_price, right_price - 1);
-    let dt_greater_than_left = is_le(left_dt, node_dt - 1);
-    let dt_greater_than_right = is_le(right_dt, node_dt - 1);
-    let right_price_larger = is_le(left_price, right_price - 1);
-    let right_dt_smaller = is_le(right_dt, left_dt - 1);
+    let left_exists = is_le(1, left.price); 
+    let right_exists = is_le(1, right.price);
+    let price_less_than_left = is_le(node.price, left.price - 1);
+    let price_less_than_right = is_le(node.price, right.price - 1);
+    let dt_greater_than_left = is_le(left.dt, node.dt - 1);
+    let dt_greater_than_right = is_le(right.dt, node.dt - 1);
+    let right_price_larger = is_le(left.price, right.price - 1);
+    let right_dt_smaller = is_le(right.dt, left.dt - 1);
 
     if (left_exists == 0) {
         if (right_exists == 1) {
@@ -212,7 +173,7 @@ func bob_sink_down{
                 bob_sink_down(right_idx);
                 handle_revoked_refs();
             } else {
-                if (node_price == right_price) {
+                if (node.price == right.price) {
                     if (dt_greater_than_right == 1) {
                         bob_swap(idx, right_idx);
                         bob_sink_down(right_idx);
@@ -234,7 +195,7 @@ func bob_sink_down{
                 bob_sink_down(left_idx);
                 handle_revoked_refs();
             } else {
-                if (node_price == left_price) {
+                if (node.price == left.price) {
                     if (dt_greater_than_left == 1) {
                         bob_swap(idx, left_idx);
                         bob_sink_down(left_idx);
@@ -269,8 +230,8 @@ func bob_sink_down{
                     bob_sink_down(right_idx);
                     handle_revoked_refs();
                 } else {
-                    if (node_price == left_price) {
-                        if (node_price == right_price) {
+                    if (node.price == left.price) {
+                        if (node.price == right.price) {
                             if (right_dt_smaller == 1) {
                                 bob_swap(idx, right_idx);
                                 bob_sink_down(right_idx);
@@ -290,7 +251,7 @@ func bob_sink_down{
                             }
                         }
                     } else {
-                        if (node_price == right_price) {
+                        if (node.price == right.price) {
                             if (dt_greater_than_right == 1) {
                                 bob_swap(idx, right_idx);
                                 bob_sink_down(right_idx);
@@ -310,30 +271,19 @@ func bob_sink_down{
 }
 
 // Utility function to swap location of two entries in buy order book.
-// @dev bob_prices, bob_dts, bob_ids must be passed as implicit arguments
 // @param idx_a : Index of first order being swapped
 // @param idx_b : Index of second order being swapped
 func bob_swap{
-        range_check_ptr,
-        bob_prices : DictAccess*,
-        bob_dts : DictAccess*,
-        bob_ids : DictAccess*,
-    } (idx_a : felt, idx_b : felt) {
+    syscall_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+} (idx_a : felt, idx_b : felt) {
     alloc_locals;
 
-    let (elem_a_price) = dict_read{dict_ptr=bob_prices}(key=idx_a);
-    let (elem_a_dt) = dict_read{dict_ptr=bob_dts}(key=idx_a);
-    let (elem_a_id) = dict_read{dict_ptr=bob_ids}(key=idx_a);
-    let (elem_b_price) = dict_read{dict_ptr=bob_prices}(key=idx_b);
-    let (elem_b_dt) = dict_read{dict_ptr=bob_dts}(key=idx_b);
-    let (elem_b_id) = dict_read{dict_ptr=bob_ids}(key=idx_b);
-
-    dict_update{dict_ptr=bob_prices}(key=idx_a, prev_value=elem_a_price, new_value=elem_b_price);
-    dict_update{dict_ptr=bob_prices}(key=idx_b, prev_value=elem_b_price, new_value=elem_a_price);
-    dict_update{dict_ptr=bob_dts}(key=idx_a, prev_value=elem_a_dt, new_value=elem_b_dt);
-    dict_update{dict_ptr=bob_dts}(key=idx_b, prev_value=elem_b_dt, new_value=elem_a_dt);
-    dict_update{dict_ptr=bob_ids}(key=idx_a, prev_value=elem_a_id, new_value=elem_b_id);
-    dict_update{dict_ptr=bob_ids}(key=idx_b, prev_value=elem_b_id, new_value=elem_a_id);
+    let (order_a) = bid_order_book.read(idx_a);
+    let (order_b) = bid_order_book.read(idx_b);
+    bid_order_book.write(idx_a, order_b);
+    bid_order_book.write(idx_b, order_a);
 
     return ();
 }
@@ -342,62 +292,12 @@ func bob_swap{
 // @dev bob_prices, bob_dts, bob_ids, bob_len must be passed as implicit arguments
 // @dev tempvars used to handle revoked implict references
 func handle_revoked_refs{
-        range_check_ptr,
-        bob_prices : DictAccess*,
-        bob_dts : DictAccess*,
-        bob_ids : DictAccess*,
-        bob_len : DictAccess*
-    } () {
+    syscall_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+} () {
+    tempvar syscall_ptr=syscall_ptr;
+    tempvar pedersen_ptr=pedersen_ptr;
     tempvar range_check_ptr=range_check_ptr;
-    tempvar bob_prices=bob_prices;
-    tempvar bob_dts=bob_dts;
-    tempvar bob_ids=bob_ids;
-    tempvar bob_len=bob_len;
     return ();
-}
-
-
-func bob_write_to_storage{
-        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-    } ( 
-        bob_prices : DictAccess*,
-        bob_dts : DictAccess*,
-        bob_ids : DictAccess*,
-        idx : felt
-    ) {
-    alloc_locals;
-
-    if (idx == -1) {
-        return ();
-    }
-    
-    let (price) = dict_read{dict_ptr=bob_prices}(key=idx);
-    let (dt) = dict_read{dict_ptr=bob_dts}(key=idx);
-    let (id) = dict_read{dict_ptr=bob_ids}(key=idx);
-    let (order) = bid_order_book.read(idx=idx);
-
-    if (id == order.id) {
-        bob_write_to_storage(bob_prices, bob_dts, bob_ids, idx - 1);
-        tempvar syscall_ptr=syscall_ptr;
-        tempvar pedersen_ptr=pedersen_ptr;
-        tempvar range_check_ptr=range_check_ptr;
-    } else {
-        tempvar new_order: Order* = new Order(id=id, price=price, dt=dt);
-        bid_order_book.write(idx, [new_order]);
-        bob_write_to_storage(bob_prices, bob_dts, bob_ids, idx - 1);
-        tempvar syscall_ptr=syscall_ptr;
-        tempvar pedersen_ptr=pedersen_ptr;
-        tempvar range_check_ptr=range_check_ptr;
-    }
-
-    return ();
-}
-
-func bob_read_one_from_storage{
-        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-    } (idx : felt) -> (
-        price : felt, dt : felt, id : felt
-    ) {
-    let (order) = bid_order_book.read(idx=idx);
-    return (price=order.price, dt=order.dt, id=order.id);
 }
