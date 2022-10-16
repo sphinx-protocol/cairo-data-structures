@@ -4,7 +4,7 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.dict import dict_read
 
-from contracts.cairo.binary_heap import (
+from src.binary_heap import (
     heap_create, max_heap_insert, max_heap_extract
 )
 

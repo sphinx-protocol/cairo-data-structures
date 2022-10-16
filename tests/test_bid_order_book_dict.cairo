@@ -4,7 +4,7 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.dict import dict_read
 
-from contracts.cairo.bid_order_book import (
+from src.bid_order_book import (
     bob_create, bob_insert, bob_extract, bob_write_to_storage, bob_read_one_from_storage
 )
 

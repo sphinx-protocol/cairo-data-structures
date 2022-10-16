@@ -1,7 +1,7 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from contracts.cairo.bid_order_book import (
+from src.bid_order_book import (
     bob_insert, bob_extract, bid_order_book
 )
 
