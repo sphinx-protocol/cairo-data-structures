@@ -56,7 +56,7 @@ func sl_node_create{
     alloc_locals;
 
     let (id) = curr_order_id.read();
-    tempvar new_node: Node* = new Node(id=id, val=val, next_id=0);
+    tempvar new_node: Node* = new Node(id=id, val=val, next_id=-1);
     sl_list.write(id, [new_node]);
     curr_order_id.write(id + 1);
 
@@ -88,10 +88,13 @@ func sl_list_push{
         handle_revoked_refs();
     }
 
-    sl_list_len.write(length + 1);    
+    sl_list_len.write(length + 1);
+    // print_sl_list(new_node.id, length + 1);
+    // print_diagnostics();
 
     return ();
 }
+
 
 // Remove item from the end of the list.
 // @return del : node deleted from list
@@ -103,7 +106,7 @@ func sl_list_pop{
     alloc_locals;
     
     let (length) = sl_list_len.read();
-    tempvar empty_node: Node* = new Node(id=0, val=0, next_id=0);
+    tempvar empty_node: Node* = new Node(id=-1, val=-1, next_id=-1);
 
     if (length == 0) {
         return (del=[empty_node]);
@@ -112,8 +115,12 @@ func sl_list_pop{
     let (head_id) = sl_list_head.read();
     let (head) = sl_list.read(head_id);
     let (second_last, last) = find_second_last_elem(prev=[empty_node], curr=head);
+    %{
+        print("second_last: " + str(ids.second_last.val))
+        print("last: " + str(ids.last.val))
+    %}
 
-    tempvar new_second_last: Node* = new Node(id=second_last.id, val=second_last.val, next_id=0);
+    tempvar new_second_last: Node* = new Node(id=second_last.id, val=second_last.val, next_id=-1);
     sl_list.write(second_last.id, [new_second_last]);
     sl_list_tail.write(second_last.id);
     sl_list.write(last.id, [empty_node]);
@@ -122,12 +129,16 @@ func sl_list_pop{
     if (length - 1 == 0) {
         sl_list.write(head_id, [empty_node]);
         sl_list.write(second_last.id, [empty_node]);
-        sl_list_head.write(0);
-        sl_list_tail.write(0);
+        sl_list_head.write(-1);
+        sl_list_tail.write(-1);
         handle_revoked_refs();
     } else {
         handle_revoked_refs();
     }
+
+    let (new_head_id) = sl_list_head.read();
+    print_sl_list(new_head_id, length - 1);
+    print_diagnostics();
 
     return (del=last);
 }
@@ -143,8 +154,8 @@ func find_second_last_elem{
     range_check_ptr,
 } (prev : Node, curr : Node) -> (second_last : Node, last : Node) {
     alloc_locals;
-
-    if (curr.next_id == 0) {
+    
+    if (curr.next_id == -1) {
         return (second_last=prev, last=curr);
     }
 
@@ -162,7 +173,7 @@ func sl_list_shift{
     alloc_locals;
 
     let (length) = sl_list_len.read();
-    tempvar empty_node: Node* = new Node(id=0, val=0, next_id=0);
+    tempvar empty_node: Node* = new Node(id=-1, val=-1, next_id=-1);
     if (length == 0) {
         return (del=[empty_node]);
     }
@@ -177,11 +188,16 @@ func sl_list_shift{
     if (length - 1 == 0) {
         let (tail_id) = sl_list_tail.read();
         sl_list.write(tail_id, [empty_node]);
-        sl_list_tail.write(0);
+        sl_list_head.write(-1);
+        sl_list_tail.write(-1);
         handle_revoked_refs();
     } else {
         handle_revoked_refs();
     }
+
+    // let (head_id) = sl_list_head.read();
+    // print_sl_list(head_id, length - 1);
+    // print_diagnostics();
 
     return (del=old_head);
 }
@@ -204,6 +220,7 @@ func sl_list_unshift{
         handle_revoked_refs();
     } else {
         let (head_id) = sl_list_head.read();
+        let (head) = sl_list.read(head_id);
         tempvar new_head: Node* = new Node(id=new_node.id, val=new_node.val, next_id=head_id);
         sl_list.write(new_node.id, [new_head]);
         sl_list_head.write(new_node.id);
@@ -211,8 +228,25 @@ func sl_list_unshift{
     }
 
     sl_list_len.write(length + 1);  
+    // print_sl_list(new_node.id, length + 1);
+    // print_diagnostics();
       
     return ();
+}
+
+
+// Retrieve value at particular position in the list.
+// @param idx : new value inserted to list
+func sl_list_get{
+    syscall_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+} (node_loc : felt, idx : felt) -> (val : felt) {
+    let (node) = sl_list.read(node_loc);
+    if (idx == 0) {
+        return (val=node.val);
+    }
+    return sl_list_get(node.next_id, idx - 1);
 }
 
 
@@ -227,5 +261,44 @@ func handle_revoked_refs{
     tempvar syscall_ptr=syscall_ptr;
     tempvar pedersen_ptr=pedersen_ptr;
     tempvar range_check_ptr=range_check_ptr;
+    return ();
+}
+
+
+// Utility function for printing singly linked list.
+func print_sl_list{
+    syscall_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+} (node_loc : felt, idx: felt) {
+    if (idx == 0) {
+        %{
+            print("")
+        %}
+        return ();
+    }
+    let (node) = sl_list.read(node_loc);
+    %{
+        print(ids.node.val, end="")
+    %}
+    return print_sl_list(node.next_id, idx - 1);
+}
+
+// Utility function for printing storage vars. 
+func print_diagnostics{
+    syscall_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+} () {
+    let (head_id) = sl_list_head.read();
+    let (head) = sl_list.read(head_id);
+    let (tail_id) = sl_list_tail.read();
+    let (tail) = sl_list.read(tail_id);
+    let (len) = sl_list_len.read();
+    %{
+        print("Head: {} [{}]".format(ids.head.val, ids.head_id))
+        print("Tail: {} [{}]".format(ids.tail.val, ids.tail_id))
+        print("Length: {}".format(ids.len))
+    %}
     return ();
 }
