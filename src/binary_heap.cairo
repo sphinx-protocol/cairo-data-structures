@@ -61,7 +61,6 @@ func heap_bubble_up{
 }
 
 // Delete root value from binary heap.
-// @param heap_len : Length of heap
 // @return old_root : Root value deleted from heap
 func heap_extract_max{
     syscall_ptr: felt*,
@@ -165,7 +164,6 @@ func heap_swap{
 }
 
 // Utility function to handle revoked implicit references.
-// @dev heap_prices, heap_dts, heap_ids, heap_len must be passed as implicit arguments
 // @dev tempvars used to handle revoked implict references
 func handle_revoked_refs{
     syscall_ptr: felt*,
