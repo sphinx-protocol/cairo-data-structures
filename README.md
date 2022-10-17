@@ -8,9 +8,9 @@ Below is a list of implemented and planned data structures. We also indicate the
 | ------------------ | -------- | ------------ | ----------- | -------------- |
 | Singly linked list | -        | -            | -           | ✅             |
 | Doubly linked list | -        | -            | -           | In development |
-| Stack              | -        | -            | -           | In development |
+| Stack              | -        | -            | -           | ✅             |
 | Queue              | -        | -            | -           | ✅             |
-| Binary search tree | -        | -            | -           | In development |
+| Binary search tree | -        | -            | -           | ✅             |
 | Binary heap        | -        | -            | -           | ✅             |
 | Priority queue     | -        | -            | -           | ✅             |
 | Hash table         | -        | -            | -           | In development |
