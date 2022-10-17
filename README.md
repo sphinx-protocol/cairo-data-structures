@@ -6,7 +6,7 @@ Below is a list of implemented and planned data structures. We also indicate the
 
 | Data structure     | Gas cost | Memory holes | No of steps | Status         |
 | ------------------ | -------- | ------------ | ----------- | -------------- |
-| Singly linked list | - | - | - | In development |
+| Singly linked list | - | - | - | ✅ |
 | Doubly linked list | - | - | - | In development |
 | Stack | - | - | - | In development |
 | Queue | - | - | - | In development |
@@ -32,4 +32,4 @@ pip install -r requirements.txt
 
 ## Testing
 
-We run unit tests using the `pytest-asyncio` package. The test contracts can be found in the `tests/cairo` folder. Incidentally, these contracts also serve as a useful guide on how the contracts in this library can be used.
+We run unit tests using `protostar`. The contracts found in the `tests` folder incidentally also serve as a useful guide on how the contracts in this library can be used.
