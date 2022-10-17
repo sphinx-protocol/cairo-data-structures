@@ -31,9 +31,9 @@ func sl_list_tail() -> (id : felt) {
 func sl_list_len() -> (len : felt) {
 }
 
-// Stores latest order id.
+// Stores latest item id.
 @storage_var
-func curr_order_id() -> (id : felt) {
+func curr_item_id() -> (id : felt) {
 }
 
 @constructor
@@ -42,7 +42,7 @@ func constructor{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
 } () {
-    curr_order_id.write(1);
+    curr_item_id.write(1);
     return ();
 }
 
@@ -57,10 +57,10 @@ func sl_node_create{
 } (val : felt, next_id : felt) -> (new_node : Node) {
     alloc_locals;
 
-    let (id) = curr_order_id.read();
+    let (id) = curr_item_id.read();
     tempvar new_node: Node* = new Node(id=id, val=val, next_id=next_id);
     sl_list.write(id, [new_node]);
-    curr_order_id.write(id + 1);
+    curr_item_id.write(id + 1);
 
     return (new_node=[new_node]);
 }
@@ -406,7 +406,6 @@ func print_diagnostics{
 }
 
 // Utility function to handle revoked implicit references.
-// @dev bob_prices, bob_dts, bob_ids, bob_len must be passed as implicit arguments
 // @dev tempvars used to handle revoked implict references
 func handle_revoked_refs{
     syscall_ptr: felt*,

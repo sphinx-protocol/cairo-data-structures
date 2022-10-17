@@ -2,7 +2,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from src.singly_linked_list import (
-    sl_list, sl_list_head, sl_list_tail, sl_node_create, sl_list_push, sl_list_pop, sl_list_shift, sl_list_unshift, sl_list_get, sl_list_set, sl_list_insert, sl_list_remove
+    sl_list, sl_list_head, sl_list_tail, sl_list_push, sl_list_pop, sl_list_shift, sl_list_unshift, sl_list_get, sl_list_set, sl_list_insert, sl_list_remove
 )
 
 @external
