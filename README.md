@@ -6,7 +6,7 @@ Below is a list of implemented and planned data structures. We also indicate the
 
 | Data structure     | Gas cost | Memory holes | No of steps | Status         |
 | ------------------ | -------- | ------------ | ----------- | -------------- |
-| Singly linked list | - | - | - | In development |
+| Singly linked list | - | - | - | ✅ |
 | Doubly linked list | - | - | - | In development |
 | Stack | - | - | - | In development |
 | Queue | - | - | - | In development |
