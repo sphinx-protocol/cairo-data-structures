@@ -19,6 +19,10 @@ func test_heap{
     range_check_ptr
 } () {
     alloc_locals;
+
+    // Constructor
+
+
     // Create heap
     let (heap, heap_len) = heap_create();
     let heap_start = heap;
