@@ -6,15 +6,15 @@ Below is a list of implemented and planned data structures. We also indicate the
 
 | Data structure     | Gas cost | Memory holes | No of steps | Status         |
 | ------------------ | -------- | ------------ | ----------- | -------------- |
-| Singly linked list | - | - | - | ✅ |
-| Doubly linked list | - | - | - | In development |
-| Stack | - | - | - | In development |
-| Queue | - | - | - | In development |
-| Binary search tree | - | - | - | In development |
-| Binary heap | - | - | - | ✅ |
-| Priority queue | - | - | - | ✅ |
-| Hash table | - | - | - | In development |
-| Graph | - | - | - | In development |
+| Singly linked list | -        | -            | -           | ✅             |
+| Doubly linked list | -        | -            | -           | In development |
+| Stack              | -        | -            | -           | In development |
+| Queue              | -        | -            | -           | ✅             |
+| Binary search tree | -        | -            | -           | In development |
+| Binary heap        | -        | -            | -           | ✅             |
+| Priority queue     | -        | -            | -           | ✅             |
+| Hash table         | -        | -            | -           | In development |
+| Graph              | -        | -            | -           | In development |
 
 ## Usage
 
@@ -26,6 +26,7 @@ source cairo_venv/bin/activate
 ```
 
 #### Install dependencies
+
 ```
 pip install -r requirements.txt
 ```
