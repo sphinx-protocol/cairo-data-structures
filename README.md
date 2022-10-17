@@ -7,13 +7,12 @@ Below is a list of implemented and planned data structures. We also indicate the
 | Data structure     | Gas cost | Memory holes | No of steps | Status         |
 | ------------------ | -------- | ------------ | ----------- | -------------- |
 | Singly linked list | -        | -            | -           | ✅             |
-| Doubly linked list | -        | -            | -           | In development |
+| Doubly linked list | -        | -            | -           | ✅             |
 | Stack              | -        | -            | -           | ✅             |
 | Queue              | -        | -            | -           | ✅             |
 | Binary search tree | -        | -            | -           | ✅             |
 | Binary heap        | -        | -            | -           | ✅             |
 | Priority queue     | -        | -            | -           | ✅             |
-| Hash table         | -        | -            | -           | In development |
 | Graph              | -        | -            | -           | In development |
 
 ## Usage
