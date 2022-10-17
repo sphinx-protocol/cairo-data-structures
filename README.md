@@ -32,4 +32,4 @@ pip install -r requirements.txt
 
 ## Testing
 
-We run unit tests using the `pytest-asyncio` package. The test contracts can be found in the `tests/cairo` folder. Incidentally, these contracts also serve as a useful guide on how the contracts in this library can be used.
+We run unit tests using `protostar`. The contracts found in the `tests` folder incidentally also serve as a useful guide on how the contracts in this library can be used.
