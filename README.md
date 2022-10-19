@@ -1,6 +1,6 @@
-# cairo-ds
+# cairo-data-structures
 
-`cairo-ds` is a Cairo library of common data structures (e.g. binary trees, heaps and linked lists), optimised for fast execution, read / write capability and on-chain storage.
+`cairo-data-structures` is a Cairo library of common data structures (e.g. binary trees, heaps and linked lists), optimised for fast execution, read / write capability and on-chain storage.
 
 Below is a list of implemented and planned data structures. We also indicate their execution efficiency in terms of memory usage and resource requirements.
 
