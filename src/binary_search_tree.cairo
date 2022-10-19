@@ -81,7 +81,7 @@ func bst_insert{
         return (success=1);
     }
     let (root) = bst.read(root_id);
-    let (success) = find_position_and_insert(val, root, new_node.id);
+    let (success) = insert_helper(val, root, new_node.id);
 
     // Diagnostics
     let (new_root) = bst.read(root_id);
@@ -95,7 +95,7 @@ func bst_insert{
 // @param curr : current node in traversal of the BST
 // @param new_node_id : id of new node to be inserted into the BST
 // @return success : 1 if insertion was successful, 0 otherwise
-func find_position_and_insert{
+func insert_helper{
     syscall_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
@@ -116,30 +116,34 @@ func find_position_and_insert{
         } else {
             let (curr_right) = bst.read(curr.right_id);
             handle_revoked_refs();
-            return find_position_and_insert(val, curr_right, new_node_id);
+            return insert_helper(val, curr_right, new_node_id);
         }
     } else {
-        if (less_than == 1) {
-             if (curr.left_id == -1) {
-                tempvar new_curr: Node* = new Node(id=curr.id, val=curr.val, left_id=new_node_id, right_id=curr.right_id);
-                bst.write(curr.id, [new_curr]);
-                handle_revoked_refs();
-                return (success=1);
-            } else {
-                let (curr_left) = bst.read(curr.left_id);
-                handle_revoked_refs();
-                return find_position_and_insert(val, curr_left, new_node_id);
-            }
-        } else {
-            handle_revoked_refs(); 
-            return (success=0);
-        }
+        handle_revoked_refs(); 
     }
+
+    if (less_than == 1) {
+            if (curr.left_id == -1) {
+            tempvar new_curr: Node* = new Node(id=curr.id, val=curr.val, left_id=new_node_id, right_id=curr.right_id);
+            bst.write(curr.id, [new_curr]);
+            handle_revoked_refs();
+            return (success=1);
+        } else {
+            let (curr_left) = bst.read(curr.left_id);
+            handle_revoked_refs();
+            return insert_helper(val, curr_left, new_node_id);
+        }
+    } else {
+        handle_revoked_refs(); 
+    }
+
+    return (success=0);
 }
 
 // Find a node in binary search tree.
 // @param val : value to be found
 // @return node : retrieved node (or empty node if not found)
+// @return parent : parent of retrieved node (or empty node if not found)
 func bst_find{
     syscall_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
@@ -203,12 +207,19 @@ func bst_delete{
 } (val : felt) -> (del : Node) {
     alloc_locals;
 
-    let (node, parent) = bst_find(val);
-    if (parent.id == -1) {
-        bst_root.write(-1);
+    tempvar empty_node: Node* = new Node(id=-1, val=-1, left_id=-1, right_id=-1);
+
+    let (root_id) = bst_root.read();
+    if (root_id == -1) {
         handle_revoked_refs();
+        return (del=[empty_node]);
     } else {
         handle_revoked_refs();
+    }
+
+    let (node, parent) = bst_find(val);
+    if (node.id == -1) {
+        return (del=[empty_node]);
     }
     
     if (node.left_id == -1) {
@@ -225,10 +236,19 @@ func bst_delete{
             handle_revoked_refs();
         } else {
             let (right) = bst.read(node.right_id);
-            let (successor) = find_min(right);
-            bst_delete(successor.val);
+            let (successor, successor_parent) = find_min(right, node);
+
             update_parent(parent=parent, node=node, new_id=successor.id);
-            handle_revoked_refs();
+            if (node.left_id == successor.id) {                
+                update_pointers(successor, -1, node.right_id);
+            } else {
+                if (node.right_id == successor.id) {
+                    update_pointers(successor, node.left_id, -1);                    
+                } else {
+                    update_pointers(successor, node.left_id, node.right_id);
+                }   
+            }
+            update_parent(parent=successor_parent, node=successor, new_id=-1);
         }
     }
 
@@ -251,27 +271,39 @@ func update_parent{
 } (parent : Node, node : Node, new_id : felt) {
     alloc_locals;
 
-    if (parent.left_id == node.id) {
-        tempvar new_parent: Node* = new Node(
-            id=parent.id, val=parent.val, left_id=new_id, right_id=parent.right_id
-        );
-        bst.write(parent.id, [new_parent]);
+    if (parent.id == 0) {
+        bst_root.write(new_id);
         handle_revoked_refs();
-        return ();
     } else {
-        if (parent.right_id == node.id) {
-            tempvar new_parent: Node* = new Node(
-                id=parent.id, val=parent.val, left_id=parent.left_id, right_id=new_id
-            );
-            bst.write(parent.id, [new_parent]);
-            handle_revoked_refs();
-            return ();
-        } else {
-            handle_revoked_refs();
-            return ();
-        }
+        handle_revoked_refs();
     }
+
+    if (parent.left_id == node.id) {
+        update_pointers(parent, new_id, parent.right_id);
+    } else {
+        update_pointers(parent, parent.left_id, new_id);
+    }
+
+    return ();
 }
+
+// Helper function to update left and right pointer of a node.
+// @param node : current node to update
+// @param left_id : id of new left child
+// @param right_id : id of new right child
+func update_pointers{
+    syscall_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+} (node : Node, left_id : felt, right_id : felt) {
+    tempvar new_node: Node* = new Node(
+        id=node.id, val=node.val, left_id=left_id, right_id=right_id
+    );
+    bst.write(node.id, [new_node]);
+    handle_revoked_refs();
+    return ();
+}
+
 
 // Helper function to find the minimum value within a tree
 // @param root : root of tree to be searched
@@ -280,12 +312,12 @@ func find_min{
     syscall_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-} (root : Node) -> (min : Node) {
-    if (root.left_id == -1) {
-        return (min=root);
+} (curr : Node, parent : Node) -> (min : Node, parent : Node) {
+    if (curr.left_id == -1) {
+        return (min=curr, parent=parent);
     }
-    let (left) = bst.read(root.left_id);
-    return find_min(left);
+    let (left) = bst.read(curr.left_id);
+    return find_min(curr=left, parent=curr);
 }
 
 func print_dfs_in_order{
